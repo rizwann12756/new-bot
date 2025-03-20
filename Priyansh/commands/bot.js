@@ -232,9 +232,9 @@ module.exports.handleEvent = async function({ api, event, args, Threads, Users }
    };
    mess = "{name}"
   
-  if (event.body.indexOf("Bot") == 0 || (event.body.indexOf("bot") == 0)) {
+  if (event.body.indexOf("bot") == 0 || (event.body.indexOf("Bot") == 0)) {
     var msg = {
-      body: `${name}, ${rand}`
+      body: `💋${name}💋, ${rand}`
     }
     return api.sendMessage(msg, threadID, messageID);
   };
