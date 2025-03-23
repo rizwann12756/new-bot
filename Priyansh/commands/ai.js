@@ -3,50 +3,50 @@ const axios = require("axios");
 module.exports.config = {
     name: "ai",
     version: "1.0.0",
-    hasPermssion: 0,
-    credits: "Priyansh Rajput",
-    description: "ChatGPT AI",
+    hasPermission: 0,
+    credits: "Modified by ChatGPT",
+    description: "Gemini AI Chatbot - Triggered by 'janu'",
     commandCategory: "ai",
-    usages: "[ask]",
+    usages: "[message]",
     cooldowns: 2,
-    dependencies: {
-        "axios": "1.4.0"
-    }
 };
 
-module.exports.run = async function ({ api, event, args, Users }) {
-    const { threadID, messageID } = event;
-    const query = args.join(" ");
+const API_KEY = "AIzaSyD8AUi70sMMjKS6DP3x07Olku6oT-YgnFY"; // Tumhari Google Gemini API key
 
-    if (!query) {
-        return api.sendMessage("Please type a message...", threadID, messageID);
-    }
-
-    api.sendMessage("Searching for an answer, please wait...", threadID, messageID);
-
+async function fetchGeminiResponse(query) {
     try {
-        api.setMessageReaction("⌛", event.messageID, () => {}, true);
-
         const res = await axios.post(
-            "https://api.openai.com/v1/chat/completions",
-            {
-                model: "gpt-3.5-turbo",
-                messages: [{ role: "user", content: query }]
-            },
-            {
-                headers: {
-                    "Authorization": `Bearer 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`, // 🔴 API key yahan add ki hai
-                    "Content-Type": "application/json"
-                }
-            }
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+            { contents: [{ parts: [{ text: query }] }] },
+            { headers: { "Content-Type": "application/json" } }
         );
 
-        const reply = res.data.choices[0].message.content;
-
-        api.sendMessage(reply, threadID, messageID);
-        api.setMessageReaction("✅", event.messageID, () => {}, true);
+        if (res.data && res.data.candidates && res.data.candidates.length > 0) {
+            return res.data.candidates[0].content.parts[0].text;
+        } else {
+            return "😕 Sorry, I couldn't understand that.";
+        }
     } catch (error) {
-        console.error("Error fetching ChatGPT response:", error.response ? error.response.data : error.message);
-        api.sendMessage("An error occurred while fetching data. Please try again later.", threadID, messageID);
+        console.error("❌ Error fetching response:", error);
+        return "❌ Gemini API is not responding. Please try again later.";
+    }
+}
+
+module.exports.run = async function ({ api, event }) {
+    const { threadID, messageID, body } = event;
+    const query = body.toLowerCase().trim();
+
+    if (!query.startsWith("janu")) return; // Sirf "janu" se start hone par hi bot chalega
+
+    const actualQuery = query.replace("janu", "").trim(); // "janu" hata kar message extract karo
+    if (!actualQuery) return api.sendMessage("Jee Janu? 💖", threadID, messageID);
+
+    api.sendMessage("🔍 Janu soch raha hai... zara rukho!", threadID, messageID);
+
+    try {
+        const reply = await fetchGeminiResponse(actualQuery);
+        api.sendMessage(reply, threadID, messageID);
+    } catch (error) {
+        api.sendMessage("❌ Kuch masla ho gaya, Janu baad me try karega!", threadID, messageID);
     }
 };
