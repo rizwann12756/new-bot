@@ -39,13 +39,18 @@ module.exports.run = async function ({ api, event, args, Users }) {
         }
         const previousConversation = conversationHistory[threadID];
 
-        // User ka new message add karein
-        previousConversation.push({ parts: [{ text: query }] });
+        // User ka new message add karein (sahi format mein)
+        previousConversation.push({
+            role: "user", // User ka message
+            parts: [{ text: query }]
+        });
 
         // Sirf last 5 messages rakhein
         if (previousConversation.length > 5) {
             previousConversation.shift(); // Sabse purana message remove karein
         }
+
+        console.log("Sending request to Gemini API with:", previousConversation); // Debugging ke liye
 
         const response = await axios.post(geminiApiUrl, {
             contents: previousConversation
@@ -55,12 +60,17 @@ module.exports.run = async function ({ api, event, args, Users }) {
             }
         });
 
+        console.log("Received response from Gemini API:", response.data); // Debugging ke liye
+
         // Check if response is valid
         if (response.data && response.data.candidates && response.data.candidates.length > 0) {
             const geminiResponse = response.data.candidates[0].content.parts[0].text; // Gemini se mila jawab
 
-            // Bot ka response bhi history mein add karein
-            previousConversation.push({ parts: [{ text: geminiResponse }] });
+            // Bot ka response bhi history mein add karein (sahi format mein)
+            previousConversation.push({
+                role: "model", // Bot ka response
+                parts: [{ text: geminiResponse }]
+            });
 
             // Fir se last 5 messages rakhein
             if (previousConversation.length > 5) {
