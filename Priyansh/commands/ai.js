@@ -50,6 +50,8 @@ module.exports.run = async function ({ api, event, args, Users }) {
                 previousConversation.shift(); // Sabse purana message remove karein
             }
 
+            console.log("Sending request to Gemini API with:", previousConversation); // Debugging ke liye
+
             const response = await axios.post(geminiApiUrl, {
                 contents: previousConversation
             }, {
@@ -57,6 +59,8 @@ module.exports.run = async function ({ api, event, args, Users }) {
                     "Content-Type": "application/json"
                 }
             });
+
+            console.log("Received response from Gemini API:", response.data); // Debugging ke liye
 
             // Check if response is valid
             if (response.data && response.data.candidates && response.data.candidates.length > 0) {
@@ -79,5 +83,7 @@ module.exports.run = async function ({ api, event, args, Users }) {
             console.error('Error fetching response from Gemini:', error.response ? error.response.data : error.message);
             api.sendMessage(`An error occurred: ${error.message}. Please try again later.`, threadID, messageID);
         }
+    } else {
+        console.log("Message does not start with 'babu'"); // Debugging ke liye
     }
 };
