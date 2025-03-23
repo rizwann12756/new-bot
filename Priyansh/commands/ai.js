@@ -26,9 +26,9 @@ module.exports.run = async function ({ api, event, args, Users }) {
     try {
         api.setMessageReaction("⌛", event.messageID, () => { }, true);
 
-        // Google Cloud AI (Bard API) Configuration
+        // Google Cloud AI (Gemini API) Configuration
         const geminiApiKey = "AIzaSyBLJasBu3OUFEzFlVI-E1l1O0GXvbk1cxA"; // Apni Gemini API key yahan dalen
-        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
 
         const response = await axios.post(geminiApiUrl, {
             contents: [{
@@ -42,12 +42,16 @@ module.exports.run = async function ({ api, event, args, Users }) {
             }
         });
 
-        const geminiResponse = response.data.candidates[0].content.parts[0].text; // Gemini se mila jawab
-
-        api.sendMessage(geminiResponse, threadID, messageID); // User ko jawab bhejna
-        api.setMessageReaction("✅", event.messageID, () => { }, true);
+        // Check if response is valid
+        if (response.data && response.data.candidates && response.data.candidates.length > 0) {
+            const geminiResponse = response.data.candidates[0].content.parts[0].text; // Gemini se mila jawab
+            api.sendMessage(geminiResponse, threadID, messageID); // User ko jawab bhejna
+            api.setMessageReaction("✅", event.messageID, () => { }, true);
+        } else {
+            throw new Error("Invalid response from API");
+        }
     } catch (error) {
-        console.error('Error fetching response from Gemini:', error);
-        api.sendMessage("An error occurred while fetching data. Please try again later.", threadID, messageID);
+        console.error('Error fetching response from Gemini:', error.response ? error.response.data : error.message);
+        api.sendMessage(`An error occurred: ${error.message}. Please try again later.`, threadID, messageID);
     }
 };
