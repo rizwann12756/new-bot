@@ -23,7 +23,7 @@ async function fetchGeminiResponse(query) {
             { headers: { "Content-Type": "application/json" } }
         );
 
-        console.log("✅ API Response Received:", res.data); // Debugging
+        console.log("✅ API Response:", JSON.stringify(res.data, null, 2)); // Debugging
 
         if (res.data && res.data.candidates && res.data.candidates.length > 0) {
             return res.data.candidates[0].content.parts[0].text;
@@ -36,7 +36,7 @@ async function fetchGeminiResponse(query) {
     }
 }
 
-module.exports.run = async function ({ api, event, args }) {
+module.exports.run = async function ({ api, event }) {
     const { threadID, messageID, body } = event;
     console.log("📩 Received Message:", body); // Debugging
 
