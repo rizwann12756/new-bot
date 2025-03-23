@@ -3,64 +3,51 @@ const axios = require("axios");
 module.exports.config = {
     name: "ai",
     version: "1.0.0",
-    hasPermission: 0,
+    hasPermssion: 0,
     credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
-    description: "Gemini AI Chatbot - Triggered by 'babu'",
+    description: "Google Cloud AI (Gemini) by Priyansh",
     commandCategory: "ai",
-    usages: "[message]",
+    usages: "[ask]",
     cooldowns: 2,
+    dependencies: {
+        "axios": "1.4.0"
+    }
 };
 
-const API_KEY = "AIzaSyD8AUi70sMMjKS6DP3x07Olku6oT-YgnFY"; // Tumhari Google Gemini API key
+module.exports.run = async function ({ api, event, args, Users }) {
+    const { threadID, messageID } = event;
+    const query = args.join(" "); // User ka input
+    const name = await Users.getNameUser(event.senderID);
 
-async function fetchGeminiResponse(query) {
-    try {
-        console.log("🔍 Query Sent to Gemini:", query);
+    if (!query) return api.sendMessage("Please type a message...", threadID, messageID);
 
-        const res = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
-            { contents: [{ parts: [{ text: query }] }] },
-            { headers: { "Content-Type": "application/json" } }
-        );
-
-        console.log("✅ API Response Received!");
-
-        if (res.data && res.data.candidates && res.data.candidates.length > 0) {
-            return res.data.candidates[0].content.parts[0].text;
-        } else {
-            console.log("⚠️ Empty response from API!");
-            return "😕 Sorry babu, mujhe yeh samajh nahi aya.";
-        }
-    } catch (error) {
-        console.error("❌ API Error:", error.response ? error.response.data : error);
-        return "❌ Babu ka dimag hang ho gaya, baad me try karo!";
-    }
-}
-
-module.exports.run = async function ({ api, event }) {
-    const { threadID, messageID, body } = event;
-    console.log("📩 Message Received:", body);
-
-    if (!body.toLowerCase().startsWith("babu")) {
-        console.log("⛔ Ignored (Not Starting with 'babu')");
-        return;
-    }
-
-    const actualQuery = body.replace(/^babu/i, "").trim();
-    if (!actualQuery) {
-        console.log("💡 Empty Query After 'babu'");
-        return api.sendMessage("Jee babu? 💖", threadID, messageID);
-    }
-
-    console.log("🚀 Processing Query:", actualQuery);
-    api.sendMessage("🔍 Babu soch raha hai... zara rukho!", threadID, messageID);
+    api.sendMessage("Searching for an answer, please wait...", threadID, messageID);
 
     try {
-        const reply = await fetchGeminiResponse(actualQuery);
-        console.log("📨 Sending Reply:", reply);
-        api.sendMessage(reply, threadID, messageID);
+        api.setMessageReaction("⌛", event.messageID, () => { }, true);
+
+        // Google Cloud AI (Bard API) Configuration
+        const geminiApiKey = "AIzaSyBLJasBu3OUFEzFlVI-E1l1O0GXvbk1cxA"; // Apni Gemini API key yahan dalen
+        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+
+        const response = await axios.post(geminiApiUrl, {
+            contents: [{
+                parts: [{
+                    text: query // User ka input
+                }]
+            }]
+        }, {
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        const geminiResponse = response.data.candidates[0].content.parts[0].text; // Gemini se mila jawab
+
+        api.sendMessage(geminiResponse, threadID, messageID); // User ko jawab bhejna
+        api.setMessageReaction("✅", event.messageID, () => { }, true);
     } catch (error) {
-        console.error("❌ Error Sending Message:", error);
-        api.sendMessage("❌ Babu ko masla ho gaya, baad me try karega!", threadID, messageID);
+        console.error('Error fetching response from Gemini:', error);
+        api.sendMessage("An error occurred while fetching data. Please try again later.", threadID, messageID);
     }
 };
