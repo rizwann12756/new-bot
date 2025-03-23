@@ -4,7 +4,7 @@ module.exports.config = {
     name: "ai",
     version: "1.0.0",
     hasPermission: 0,
-    credits: "Modified by ChatGPT",
+    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
     description: "Gemini AI Chatbot - Triggered by 'babu'",
     commandCategory: "ai",
     usages: "[message]",
