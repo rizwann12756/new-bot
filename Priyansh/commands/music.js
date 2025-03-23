@@ -1,103 +1,114 @@
-#cmd install video.js const { GoatWrapper } = require("fca-liane-utils");
+const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
-const yts = require("yt-search");
+const ytSearch = require("yt-search");
+const https = require("https");
+
+function deleteAfterTimeout(filePath, timeout = 5000) {
+  setTimeout(() => {
+    if (fs.existsSync(filePath)) {
+      fs.unlink(filePath, (err) => {
+        if (!err) {
+          console.log(`✅ Deleted file: ${filePath}`);
+        } else {
+          console.error(`❌ Error deleting file: ${filePath}`);
+        }
+      });
+    }
+  }, timeout);
+}
 
 module.exports = {
   config: {
-    name: "video",
-    version: "1.0.0",
-    author: "aayuse",
-    countDown: 5,
-    role: 0,
-    shortDescription: {
-      en: "Download YouTube videos (under 25MB) or provide a link",
-    },
-    longDescription: {
-      en: "Search and download YouTube videos under 25MB, or provide a direct download link if the file size is too large.",
-    },
-    category: "owner",
-    guide: {
-      en: "{pn} <video name>",
-    },
+    name: "music",
+    version: "1.0.4",
+    hasPermssion: 0,
+    credits: "Mirrykal",
+    description: "Download YouTube song from keyword search",
+    commandCategory: "Media",
+    usages: "[songName]",
+    cooldowns: 5,
   },
 
-  onStart: async function ({ args, message }) {
-    if (!args[0]) {
-      return message.reply("❌ | Jis song ki video dekhni ho uska name likho..!");
+  run: async function ({ api, event, args }) {
+    if (args.length === 0) {
+      return api.sendMessage("⚠️ Please provide a song name to search.", event.threadID);
     }
 
+    const songName = args.join(" ");
+    const processingMessage = await api.sendMessage(
+      `🔍 Searching for "${songName}"...`,
+      event.threadID,
+      null,
+      event.messageID
+    );
+
     try {
-      const query = args.join(" ");
-      await message.reply(`🔍 | "${query}" song dhondh kar send karti hun...`);
-
-      const searchResults = await yts(query);
-      const firstResult = searchResults.videos[0];
-
-      if (!firstResult) {
-        return message.reply(`❌ | "${query}" ke liye koi results nahi mile.`);
+      // 🔎 **YouTube पर Search**
+      const searchResults = await ytSearch(songName);
+      if (!searchResults || !searchResults.videos.length) {
+        throw new Error("No results found for your search query.");
       }
 
-      const { title, url } = firstResult;
-      await message.reply(`⏳ | "${title}" ka download link mil raha hai...`);
+      // 🎵 **टॉप Result का URL**
+      const topResult = searchResults.videos[0];
+      const videoUrl = `https://www.youtube.com/watch?v=${topResult.videoId}`;
 
-      const apiUrl = `https://mr-prince-malhotra-ytdl.vercel.app/video?url=${encodeURIComponent(url)}`;
-      const response = await axios.get(apiUrl);
-      const responseData = response.data;
+      // 🖥 **API Call to Your YouTube Downloader**
+      const apiUrl = `https://arun-music.onrender.com//download?url=${encodeURIComponent(videoUrl)}`;
+      const downloadResponse = await axios.get(apiUrl);
 
-      if (!responseData.result || !responseData.result.url) {
-        return message.reply(`❌ | "${title}" ke liye download link nahi mila.`);
+      if (!downloadResponse.data.file_url) {
+        throw new Error("Download failed. API did not return a file URL.");
       }
 
-      const downloadUrl = responseData.result.url;
-      const filePath = path.resolve(__dirname, "cache", `${Date.now()}-${title}.mp4`);
+      const downloadUrl = downloadResponse.data.file_url.replace("http:", "https:"); // 🛠 Fix http → https
 
-      const videoResponse = await axios({
-        method: "get",
-        url: downloadUrl,
-        responseType: "stream",
-        headers: { "User-Agent": "Mozilla/5.0" },
-      });
+      // 📂 **Set Download Path**
+      const downloadDir = path.join(__dirname, "cache");
+      if (!fs.existsSync(downloadDir)) {
+        fs.mkdirSync(downloadDir, { recursive: true });
+      }
 
-      const fileStream = fs.createWriteStream(filePath);
-      videoResponse.data.pipe(fileStream);
+      const safeTitle = topResult.title.replace(/[^a-zA-Z0-9]/g, "_");
+      const filename = `${safeTitle}.mp3`;
+      const downloadPath = path.join(downloadDir, filename);
 
-      fileStream.on("finish", async () => {
-        const fileSizeInMB = fs.statSync(filePath).size / (1024 * 1024);
-
-        if (fileSizeInMB > 25) {
-          fs.unlinkSync(filePath);
-          return message.reply(`❌ | "${title}" ka size ${fileSizeInMB.toFixed(2)}MB hai, jo 25MB se zyada hai. 📥 Download link: ${downloadUrl}`);
-        }
-
-        await message.reply({
-          body: `🎥 | Apki video "${title}" download karli gayi hai! 💞`,
-          attachment: fs.createReadStream(filePath),
+      // ⬇️ **Download File**
+      const file = fs.createWriteStream(downloadPath);
+      await new Promise((resolve, reject) => {
+        https.get(downloadUrl, (response) => {
+          if (response.statusCode === 200) {
+            response.pipe(file);
+            file.on("finish", () => {
+              file.close(resolve);
+            });
+          } else {
+            reject(new Error(`Failed to download file. Status code: ${response.statusCode}`));
+          }
+        }).on("error", (error) => {
+          fs.unlinkSync(downloadPath);
+          reject(new Error(`Error downloading file: ${error.message}`));
         });
-
-        fs.unlinkSync(filePath);
       });
 
-      videoResponse.data.on("error", async (error) => {
-        console.error(error);
-        fs.unlinkSync(filePath);
-        return message.reply(`❌ | Video download karne me masla aya: ${error.message}`);
-      });
+      api.setMessageReaction("✅", event.messageID, () => {}, true);
 
+      // 🎧 **Send the MP3 File**
+      await api.sendMessage(
+        {
+          attachment: fs.createReadStream(downloadPath),
+          body: `🎶 Title: ${topResult.title}\nHere is your song:`,
+        },
+        event.threadID,
+        event.messageID
+      );
+
+      // 🗑 **Auto Delete File After 5 Seconds**
+      deleteAfterTimeout(downloadPath, 5000);
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Koi unknown error ho gayi.";
-      if (error.response) {
-        errorMessage = error.response.data?.message || error.response.statusText || "Server se response nahi mila.";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      return message.reply(`❌ | Mujhe video download karne me kuch issues arahe hain: ${errorMessage}`);
+      console.error(`❌ Error: ${error.message}`);
+      api.sendMessage(`❌ Failed: ${error.message}`, event.threadID, event.messageID);
     }
   },
 };
-const wrapper = new GoatWrapper(module.exports);
-wrapper.applyNoPrefix({ allowPrefix: true });
