@@ -15,11 +15,15 @@ const API_KEY = "AIzaSyD8AUi70sMMjKS6DP3x07Olku6oT-YgnFY"; // Tumhari Google Gem
 
 async function fetchGeminiResponse(query) {
     try {
+        console.log("🔍 Query Sent to Gemini:", query); // Debugging
+
         const res = await axios.post(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
             { contents: [{ parts: [{ text: query }] }] },
             { headers: { "Content-Type": "application/json" } }
         );
+
+        console.log("✅ API Response Received:", res.data); // Debugging
 
         if (res.data && res.data.candidates && res.data.candidates.length > 0) {
             return res.data.candidates[0].content.parts[0].text;
@@ -27,24 +31,32 @@ async function fetchGeminiResponse(query) {
             return "😕 Sorry babu, mujhe yeh samajh nahi aya.";
         }
     } catch (error) {
-        console.error("❌ Error fetching response:", error);
+        console.error("❌ Error fetching response:", error.response ? error.response.data : error);
         return "❌ Gemini API ka masla hai, thodi dair baad try karo babu!";
     }
 }
 
 module.exports.run = async function ({ api, event, args }) {
-    const { threadID, messageID } = event;
+    const { threadID, messageID, body } = event;
+    console.log("📩 Received Message:", body); // Debugging
 
-    const query = args.join(" "); // Pehle args use nahi ho raha tha, ab fix kar diya hai.
-    if (!query.toLowerCase().startsWith("babu")) return; // "babu" se start hona chahiye
+    if (!body.toLowerCase().startsWith("babu")) {
+        console.log("⛔ Not starting with 'babu', ignoring...");
+        return;
+    }
 
-    const actualQuery = query.replace(/^babu/i, "").trim(); // "babu" hata kar actual message nikalo
-    if (!actualQuery) return api.sendMessage("Jee babu? 💖", threadID, messageID);
+    const actualQuery = body.replace(/^babu/i, "").trim();
+    if (!actualQuery) {
+        console.log("💡 Empty query after 'babu', sending default reply.");
+        return api.sendMessage("Jee babu? 💖", threadID, messageID);
+    }
 
+    console.log("🚀 Processing Query:", actualQuery); // Debugging
     api.sendMessage("🔍 Babu soch raha hai... zara rukho!", threadID, messageID);
 
     try {
         const reply = await fetchGeminiResponse(actualQuery);
+        console.log("📨 Sending Reply:", reply); // Debugging
         api.sendMessage(reply, threadID, messageID);
     } catch (error) {
         api.sendMessage("❌ Kuch masla ho gaya, babu baad me try karega!", threadID, messageID);
