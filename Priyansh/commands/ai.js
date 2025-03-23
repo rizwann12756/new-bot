@@ -11,7 +11,7 @@ module.exports.config = {
     cooldowns: 2,
 };
 
-const API_KEY = "YOUR_GEMINI_API_KEY"; // Tumhari Google Gemini API key
+const API_KEY = "AIzaSyD8AUi70sMMjKS6DP3x07Olku6oT-YgnFY"; // Tumhari Google Gemini API key
 
 async function fetchGeminiResponse(query) {
     try {
