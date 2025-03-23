@@ -32,12 +32,12 @@ module.exports = {
 
   run: async function ({ api, event, args }) {
     if (args.length === 0) {
-      return api.sendMessage("⚠️ Please provide a song name to search.", event.threadID);
+      return api.sendMessage("⚠️ Song ka name likh ker de bai, ab tere dimaag se to nahi nikaal sakta ke kia chaye tujy 😡", event.threadID);
     }
 
     const songName = args.join(" ");
     const processingMessage = await api.sendMessage(
-      `🔍 Searching for "${songName}"...`,
+      `apny babu ke liey song dhund rha hun 😙 thoora sa wait ker bejhta hun🥱😇 "${songName}"...`,
       event.threadID,
       null,
       event.messageID
@@ -47,7 +47,7 @@ module.exports = {
       // 🔎 **YouTube पर Search**
       const searchResults = await ytSearch(songName);
       if (!searchResults || !searchResults.videos.length) {
-        throw new Error("No results found for your search query.");
+        throw new Error("Appun ko nahi mila tera Search 🔍😿.");
       }
 
       // 🎵 **टॉप Result का URL**
