@@ -5,7 +5,7 @@ module.exports.config = {
     version: "1.0.0",
     hasPermission: 0,
     credits: "Modified by ChatGPT",
-    description: "Gemini AI Chatbot - Triggered by 'janu'",
+    description: "Gemini AI Chatbot - Triggered by 'babu'",
     commandCategory: "ai",
     usages: "[message]",
     cooldowns: 2,
@@ -24,11 +24,11 @@ async function fetchGeminiResponse(query) {
         if (res.data && res.data.candidates && res.data.candidates.length > 0) {
             return res.data.candidates[0].content.parts[0].text;
         } else {
-            return "😕 Sorry, I couldn't understand that.";
+            return "😕 Sorry babu, mujhe yeh samajh nahi aya.";
         }
     } catch (error) {
         console.error("❌ Error fetching response:", error);
-        return "❌ Gemini API is not responding. Please try again later.";
+        return "❌ Gemini API ka masla hai, thodi dair baad try karo babu!";
     }
 }
 
@@ -36,17 +36,17 @@ module.exports.run = async function ({ api, event }) {
     const { threadID, messageID, body } = event;
     const query = body.toLowerCase().trim();
 
-    if (!query.startsWith("janu")) return; // Sirf "janu" se start hone par hi bot chalega
+    if (!query.startsWith("babu")) return; // Sirf "babu" se start hone par hi bot chalega
 
-    const actualQuery = query.replace("janu", "").trim(); // "janu" hata kar message extract karo
-    if (!actualQuery) return api.sendMessage("Jee Janu? 💖", threadID, messageID);
+    const actualQuery = query.replace("babu", "").trim(); // "babu" hata kar message extract karo
+    if (!actualQuery) return api.sendMessage("Jee babu? 💖", threadID, messageID);
 
-    api.sendMessage("🔍 Janu soch raha hai... zara rukho!", threadID, messageID);
+    api.sendMessage("🔍 Babu soch raha hai... zara rukho!", threadID, messageID);
 
     try {
         const reply = await fetchGeminiResponse(actualQuery);
         api.sendMessage(reply, threadID, messageID);
     } catch (error) {
-        api.sendMessage("❌ Kuch masla ho gaya, Janu baad me try karega!", threadID, messageID);
+        api.sendMessage("❌ Kuch masla ho gaya, babu baad me try karega!", threadID, messageID);
     }
 };
