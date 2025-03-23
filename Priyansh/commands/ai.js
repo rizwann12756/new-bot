@@ -32,13 +32,13 @@ async function fetchGeminiResponse(query) {
     }
 }
 
-module.exports.run = async function ({ api, event }) {
-    const { threadID, messageID, body } = event;
-    const query = body.toLowerCase().trim();
+module.exports.run = async function ({ api, event, args }) {
+    const { threadID, messageID } = event;
 
-    if (!query.startsWith("babu")) return; // Sirf "babu" se start hone par hi bot chalega
+    const query = args.join(" "); // Pehle args use nahi ho raha tha, ab fix kar diya hai.
+    if (!query.toLowerCase().startsWith("babu")) return; // "babu" se start hona chahiye
 
-    const actualQuery = query.replace("babu", "").trim(); // "babu" hata kar message extract karo
+    const actualQuery = query.replace(/^babu/i, "").trim(); // "babu" hata kar actual message nikalo
     if (!actualQuery) return api.sendMessage("Jee babu? 💖", threadID, messageID);
 
     api.sendMessage("🔍 Babu soch raha hai... zara rukho!", threadID, messageID);
