@@ -10,5 +10,5 @@ module.exports.config = {
 module.exports.run = ({event, api}) =>{
     const permission = ["100090727842226", "100090727842226"];
   	if (!permission.includes(event.senderID)) return api.sendMessage("[ ERR ] You don't have permission to use this command, This Command Only For Rizwan", event.threadID, event.messageID);
-  api.sendMessage(`[ OK ] ${global.config.BOTNAME} Bot are now turned off.`,event.threadID, () =>process.exit(0))
+  api.sendMessage(`[ OK ] ${global.config.BOTNAME} ✅ Bot Off - Agar Kabhi Sad Howy to mujy Bula lena 😊 Ap ko smile ker waany ke liye me her waqt haazir hun😊🥀.`,event.threadID, () =>process.exit(0))
 }
