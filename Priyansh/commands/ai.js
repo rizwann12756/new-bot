@@ -31,7 +31,7 @@ module.exports.run = async function ({ api, event, args, Users }) {
 
         // Google Cloud AI (Gemini API) Configuration
         const geminiApiKey = "AIzaSyBLJasBu3OUFEzFlVI-E1l1O0GXvbk1cxA"; // Apni Gemini API key yahan dalen
-        const geminiApiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey};
+        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
 
         // Conversation history ko include karein (sirf last 5 messages)
         if (!conversationHistory[threadID]) {
@@ -84,6 +84,6 @@ module.exports.run = async function ({ api, event, args, Users }) {
         }
     } catch (error) {
         console.error('Error fetching response from Gemini:', error.response ? error.response.data : error.message);
-        api.sendMessage(An error occurred: ${error.message}. Please try again later., threadID, messageID);
+        api.sendMessage(`An error occurred: ${error.message}. Please try again later.`, threadID, messageID);
     }
-}
+};
