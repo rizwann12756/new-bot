@@ -4,12 +4,12 @@ const axios = require("axios");
 const conversationHistory = {};
 
 module.exports.config = {
-    name: "ai",
+    name: "babu",
     version: "1.0.0",
     hasPermssion: 0,
     credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
     description: "Google Cloud AI (Gemini) by Priyansh",
-    commandCategory: "Noprefix", // No prefix command
+    commandCategory: "ai",
     usages: "[ask]",
     cooldowns: 2,
     dependencies: {
@@ -17,18 +17,12 @@ module.exports.config = {
     }
 };
 
-// ✅ Handle messages without prefix
-module.exports.handleEvent = async function ({ api, event, Users }) {
-    const { threadID, messageID, senderID, body } = event;
-
-    // Agar message exist nahi karta to return
-    if (!body) return;
-
-    const query = body.toLowerCase().trim(); // Lowercase & trim for better detection
+module.exports.run = async function ({ api, event, args, Users }) {
+    const { threadID, messageID, senderID } = event;
+    const query = args.join(" "); // User ka input
     const name = await Users.getNameUser(senderID);
 
-    // ✅ Sirf "babu" per react kare
-    if (query !== "babu") return;
+    if (!query) return api.sendMessage("Please type a message...", threadID, messageID);
 
     api.sendMessage("Searching for an answer, please wait...", threadID, messageID);
 
@@ -36,29 +30,28 @@ module.exports.handleEvent = async function ({ api, event, Users }) {
         api.setMessageReaction("⌛", event.messageID, () => { }, true);
 
         // Google Cloud AI (Gemini API) Configuration
-        const geminiApiKey = "AIzaSyBLJasBu3OUFEzFlVI-E1l1O0GXvbk1cxA";
-        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+        const geminiApiKey = "AIzaSyBLJasBu3OUFEzFlVI-E1l1O0GXvbk1cxA"; // Apni Gemini API key yahan dalen
+        const geminiApiUrl = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey};
 
-        // ✅ Conversation history maintain karein
+        // Conversation history ko include karein (sirf last 5 messages)
         if (!conversationHistory[threadID]) {
             conversationHistory[threadID] = [];
         }
         const previousConversation = conversationHistory[threadID];
 
-        // ✅ User ka new message add karein
+        // User ka new message add karein (sahi format mein)
         previousConversation.push({
-            role: "user",
-            parts: [{ text: "Hello, Babu!" }] // Default message to Gemini
+            role: "user", // User ka message
+            parts: [{ text: query }]
         });
 
-        // ✅ Sirf last 5 messages rakhein
+        // Sirf last 5 messages rakhein
         if (previousConversation.length > 5) {
-            previousConversation.shift();
+            previousConversation.shift(); // Sabse purana message remove karein
         }
 
-        console.log("Sending request to Gemini API with:", previousConversation);
+        console.log("Sending request to Gemini API with:", previousConversation); // Debugging ke liye
 
-        // ✅ Request bhejna API ko
         const response = await axios.post(geminiApiUrl, {
             contents: previousConversation
         }, {
@@ -67,30 +60,30 @@ module.exports.handleEvent = async function ({ api, event, Users }) {
             }
         });
 
-        console.log("Received response from Gemini API:", response.data);
+        console.log("Received response from Gemini API:", response.data); // Debugging ke liye
 
-        // ✅ Check response
+        // Check if response is valid
         if (response.data && response.data.candidates && response.data.candidates.length > 0) {
-            const geminiResponse = response.data.candidates[0].content.parts[0].text;
+            const geminiResponse = response.data.candidates[0].content.parts[0].text; // Gemini se mila jawab
 
-            // ✅ Response history me add karein
+            // Bot ka response bhi history mein add karein (sahi format mein)
             previousConversation.push({
-                role: "model",
+                role: "model", // Bot ka response
                 parts: [{ text: geminiResponse }]
             });
 
-            // ✅ Sirf last 5 messages rakhein
+            // Fir se last 5 messages rakhein
             if (previousConversation.length > 5) {
-                previousConversation.shift();
+                previousConversation.shift(); // Sabse purana message remove karein
             }
 
-            api.sendMessage(geminiResponse, threadID, messageID);
+            api.sendMessage(geminiResponse, threadID, messageID); // User ko jawab bhejna
             api.setMessageReaction("✅", event.messageID, () => { }, true);
         } else {
             throw new Error("Invalid response from API");
         }
     } catch (error) {
         console.error('Error fetching response from Gemini:', error.response ? error.response.data : error.message);
-        api.sendMessage(`An error occurred: ${error.message}. Please try again later.`, threadID, messageID);
+        api.sendMessage(An error occurred: ${error.message}. Please try again later., threadID, messageID);
     }
-};
+}
