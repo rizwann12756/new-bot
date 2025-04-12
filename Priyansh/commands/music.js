@@ -5,7 +5,7 @@ const ytSearch = require("yt-search");
 
 module.exports = {
   config: {
-    name: "song", // Command name set as "song"
+    name: "song", // Correct command name here
     version: "2.0.2",
     hasPermssion: 0,
     credits: "Mirrykal",
@@ -16,7 +16,7 @@ module.exports = {
   },
 
   run: async function ({ api, event, args }) {
-    // Make sure the command starts with ".song"
+    // Check if the command starts with `.song` and handle it
     if (!event.body.startsWith(".song")) {
       return; // Do nothing if it's not a .song command
     }
