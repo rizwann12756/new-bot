@@ -2,9 +2,16 @@ name: Node.js CI
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
+    paths:
+      - 'path/to/your/bot/files/**'  # Replace this with the specific path where your bot files are located
   pull_request:
-    branches: [main]
+    branches: 
+      - main
+    paths:
+      - 'path/to/your/bot/files/**'  # Same here, specify the bot files path
+  workflow_dispatch:  # Allows manual triggering from GitHub Actions interface
 
 jobs:
   build:
@@ -29,7 +36,7 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    # Step to run the bot with the correct port
+    # Step to start the bot (optional, only if you need it to run automatically)
     - name: Start the bot
       env:
         PORT: 8080
